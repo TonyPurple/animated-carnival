@@ -1,18 +1,18 @@
-import { Redirect, Tabs } from "expo-router";
+import { Redirect } from "expo-router";
+import { useAuth } from "@clerk/clerk-expo";
+import { Tabs } from "expo-router";
 import React from "react";
 
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-// Import the `useAuth` hook from Clerk
-import { useAuth } from "@clerk/clerk-expo";
 
-export default function TabLayout() {
+export default function AuthRoutesLayout() {
   const colorScheme = useColorScheme();
-  // Redirect if the user is not signed in
   const { isSignedIn } = useAuth();
-  if (!isSignedIn) {
-    return <Redirect href={"/sign-in"} />;
+
+  if (isSignedIn) {
+    return <Redirect href={"/"} />;
   }
 
   return (
@@ -21,38 +21,34 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
       }}
+      sceneContainerStyle={{
+        backgroundColor: "white",
+      }}
     >
       <Tabs.Screen
-        name="index"
+        name="sign-in"
         options={{
-          title: "Home",
+          title: "Sign in",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "home" : "home-outline"}
+              name={focused ? "person" : "person-outline"}
               color={color}
             />
           ),
+          headerShown: false,
         }}
       />
       <Tabs.Screen
-        name="history"
+        name="sign-up"
         options={{
-          title: "History",
+          title: "Sign up",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "calendar" : "calendar-outline"}
+              name={focused ? "person-add" : "person-add-outline"}
               color={color}
             />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? "cog" : "cog-outline"} color={color} />
-          ),
+          headerShown: false,
         }}
       />
     </Tabs>
