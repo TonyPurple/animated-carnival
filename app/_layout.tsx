@@ -12,7 +12,6 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ClerkLoaded, ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import * as SecureStore from "expo-secure-store";
-// Import the necessary Convex components
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 
@@ -53,6 +52,7 @@ const tokenCache = {
   },
 };
 
+// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -73,7 +73,6 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-      {/* Wrap the app with the Convex/Clerk provider, using `useAuth` from Clerk for authentication */}
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <ClerkLoaded>
           <ThemeProvider
@@ -83,6 +82,45 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="+not-found" />
+              <Stack.Screen
+                name="(screens)/new-workout"
+                options={{
+                  title: "New workout",
+                  contentStyle: {
+                    backgroundColor: "white",
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="(screens)/log-reps/[workoutId]"
+                options={{
+                  title: "Log reps",
+                  contentStyle: {
+                    backgroundColor: "white",
+                    paddingTop: 8,
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="(screens)/edit-workout/[workoutId]"
+                options={{
+                  title: "Edit workout",
+                  contentStyle: {
+                    backgroundColor: "white",
+                    paddingTop: 8,
+                  },
+                }}
+              />
+              <Stack.Screen
+                name="(screens)/edit-entry/[entryId]"
+                options={{
+                  title: "Edit entry",
+                  contentStyle: {
+                    backgroundColor: "white",
+                    paddingTop: 8,
+                  },
+                }}
+              />
             </Stack>
           </ThemeProvider>
         </ClerkLoaded>
