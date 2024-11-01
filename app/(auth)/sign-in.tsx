@@ -1,10 +1,20 @@
-import { useSignIn } from "@clerk/clerk-expo";
+import { useSignIn, UseOAuthFlowParams } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
-import { Text, View, ActivityIndicator, TextInput } from "react-native";
-import React from "react";
+import {
+  Text,
+  View,
+  ActivityIndicator,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState, useCallback } from "react";
 import Button from "@/components/Button";
 import OAuthButton from "@/components/OAuthButton";
-import MaterialCommunityIcons from "@expo/vector-icons/build/MaterialCommunityIcons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { styles } from "@/constants/styles";
@@ -14,11 +24,47 @@ export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [error, setError] = React.useState("");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [error, setError] = useState("");
 
-  const onSignInPress = React.useCallback(async () => {
+  const isFormValid = emailAddress && password && isLoaded;
+
+  const oauthProviders: {
+    strategy: UseOAuthFlowParams["strategy"];
+    icon: string;
+    label: string;
+  }[] = [
+    { strategy: "oauth_google", icon: "google", label: "Google" },
+    { strategy: "oauth_github", icon: "github", label: "GitHub" },
+  ];
+
+  // Handler for email input change
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      setEmailAddress(text);
+      if (error) setError("");
+    },
+    [error]
+  );
+
+  // Handler for password input change
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      setPassword(text);
+      if (error) setError("");
+    },
+    [error]
+  );
+
+  // Toggle password visibility
+  const togglePasswordVisibility = useCallback(() => {
+    setIsPasswordVisible((prev) => !prev);
+  }, []);
+
+  // Handle sign-in press
+  const onSignInPress = useCallback(async () => {
     if (!isLoaded) {
       return;
     }
@@ -36,7 +82,6 @@ export default function SignInScreen() {
 
         router.replace("/");
       } else {
-        // Handle other statuses if needed
         setError("Sign-in was not completed. Please try again.");
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
@@ -53,109 +98,111 @@ export default function SignInScreen() {
   }
 
   return (
-    <View style={styles.authScreen}>
-      <View style={styles.authForm}>
-        {/* Header text */}
-        <ThemedView style={{ marginVertical: 16, alignItems: "center" }}>
-          <ThemedText type="title">Sign into Daily Reps</ThemedText>
-          <ThemedText type="default">
-            Welcome back! Please sign in to continue
-          </ThemedText>
-        </ThemedView>
-
-        {/* OAuth buttons */}
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 8,
-          }}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.authScreen}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollViewContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={{ flex: 1 }}>
-            <OAuthButton strategy="oauth_google">
-              <MaterialCommunityIcons name="google" size={18} /> Google
-            </OAuthButton>
+          <View style={styles.authForm}>
+            {/* Header text */}
+            <ThemedView style={styles.headerView}>
+              <ThemedText type="title">Sign into Daily Reps</ThemedText>
+              <ThemedText type="default">
+                Welcome back! Please sign in to continue
+              </ThemedText>
+            </ThemedView>
+
+            {/* OAuth buttons */}
+            <View style={styles.oauthContainer}>
+              {oauthProviders.map((provider) => (
+                <View key={provider.strategy} style={{ flex: 1 }}>
+                  <OAuthButton strategy={provider.strategy}>
+                    <MaterialCommunityIcons
+                      name={
+                        provider.icon as keyof typeof MaterialCommunityIcons.glyphMap
+                      }
+                      size={18}
+                    />{" "}
+                    {provider.label}
+                  </OAuthButton>
+                </View>
+              ))}
+            </View>
+
+            {/* Form separator */}
+            <View style={styles.separator}>
+              <View style={styles.separatorLine} />
+              <View>
+                <Text style={styles.separatorText}>or</Text>
+              </View>
+              <View style={styles.separatorLine} />
+            </View>
+
+            {/* Input fields */}
+            <View style={styles.inputFieldsContainer}>
+              <Text>Email address</Text>
+              <TextInput
+                style={styles.input}
+                autoCapitalize="none"
+                placeholder="Enter your email"
+                placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                accessibilityLabel="Email address input"
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                autoComplete="email"
+                value={emailAddress}
+                onChangeText={handleEmailChange}
+              />
+              <Text>Password</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your password"
+                  placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                  accessibilityLabel="Password input"
+                  textContentType="password"
+                  autoComplete="password"
+                  secureTextEntry={!isPasswordVisible}
+                  value={password}
+                  returnKeyType="done"
+                  onSubmitEditing={onSignInPress}
+                  onChangeText={handlePasswordChange}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={togglePasswordVisibility}
+                >
+                  <Ionicons
+                    name={isPasswordVisible ? "eye-off" : "eye"}
+                    size={24}
+                    color="gray"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Display error message */}
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <Button onPress={onSignInPress} disabled={!isFormValid}>
+              <Text>Sign in</Text> <Ionicons name="caret-forward" />
+            </Button>
+
+            {/* Suggest new users create an account */}
+            <View style={styles.signUpPromptContainer}>
+              <Text>Don't have an account?</Text>
+              <Link href="/sign-up">
+                <Text style={styles.boldText}>Sign up</Text>
+              </Link>
+            </View>
           </View>
-        </View>
-
-        {/* Form separator */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: 16,
-          }}
-        >
-          <View style={{ flex: 1, height: 1, backgroundColor: "#eee" }} />
-          <View>
-            <Text style={{ width: 50, textAlign: "center", color: "#555" }}>
-              or
-            </Text>
-          </View>
-          <View style={{ flex: 1, height: 1, backgroundColor: "#eee" }} />
-        </View>
-
-        {/* Input fields */}
-        <View style={{ gap: 8, marginBottom: 24 }}>
-          <Text>Email address</Text>
-          <TextInput
-            style={styles.input}
-            autoCapitalize="none"
-            placeholder="Enter your email"
-            placeholderTextColor="rgba(0, 0, 0, 0.5)"
-            accessibilityLabel="Email address input"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            autoComplete="email"
-            value={emailAddress}
-            onChangeText={(text) => {
-              setEmailAddress(text);
-              if (error) setError("");
-            }}
-          />
-          <Text>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your password"
-            placeholderTextColor="rgba(0, 0, 0, 0.5)"
-            accessibilityLabel="Password input"
-            textContentType="password"
-            autoComplete="password"
-            secureTextEntry={true}
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (error) setError("");
-            }}
-          />
-        </View>
-
-        {/* Display error message */}
-        {error ? (
-          <Text style={{ color: "red", marginBottom: 10 }}>{error}</Text>
-        ) : null}
-
-        {/* Sign in button */}
-        <Button onPress={onSignInPress}>
-          <Text>Sign in</Text> <Ionicons name="caret-forward" />
-        </Button>
-
-        {/* Suggest new users create an account */}
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 4,
-            justifyContent: "center",
-            marginVertical: 18,
-          }}
-        >
-          <Text>Don't have an account?</Text>
-          <Link href="/sign-up">
-            <Text style={{ fontWeight: "bold" }}>Sign up</Text>
-          </Link>
-        </View>
-      </View>
-    </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
