@@ -16,6 +16,7 @@ export default function SignInScreen() {
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
 
   const onSignInPress = React.useCallback(async () => {
     if (!isLoaded) {
@@ -35,12 +36,17 @@ export default function SignInScreen() {
 
         router.replace("/");
       } else {
+        // Handle other statuses if needed
+        setError("Sign-in was not completed. Please try again.");
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
     } catch (err: any) {
+      const errorMessage =
+        err.errors?.[0]?.message || "An unexpected error occurred.";
+      setError(errorMessage);
       console.error(JSON.stringify(err, null, 2));
     }
-  }, [isLoaded, emailAddress, password]);
+  }, [isLoaded, emailAddress, password, signIn, setActive, router]);
 
   if (!isLoaded) {
     return <ActivityIndicator size="large" />;
@@ -73,7 +79,13 @@ export default function SignInScreen() {
         </View>
 
         {/* Form separator */}
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginVertical: 16,
+          }}
+        >
           <View style={{ flex: 1, height: 1, backgroundColor: "#eee" }} />
           <View>
             <Text style={{ width: 50, textAlign: "center", color: "#555" }}>
@@ -89,17 +101,39 @@ export default function SignInScreen() {
           <TextInput
             style={styles.input}
             autoCapitalize="none"
+            placeholder="Enter your email"
+            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+            accessibilityLabel="Email address input"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
             value={emailAddress}
-            onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
+            onChangeText={(text) => {
+              setEmailAddress(text);
+              if (error) setError("");
+            }}
           />
           <Text>Password</Text>
           <TextInput
             style={styles.input}
-            value={password}
+            placeholder="Enter your password"
+            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+            accessibilityLabel="Password input"
+            textContentType="password"
+            autoComplete="password"
             secureTextEntry={true}
-            onChangeText={(password) => setPassword(password)}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (error) setError("");
+            }}
           />
         </View>
+
+        {/* Display error message */}
+        {error ? (
+          <Text style={{ color: "red", marginBottom: 10 }}>{error}</Text>
+        ) : null}
 
         {/* Sign in button */}
         <Button onPress={onSignInPress}>
