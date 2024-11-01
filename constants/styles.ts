@@ -32,4 +32,7 @@ export const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
+  placeholderColor: {
+    color: "rgba(0, 0, 0, 0.5)",
+  },
 });
