@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import React from "react";
+import React, { useState, useCallback } from "react";
 import Button from "@/components/Button";
 import OAuthButton from "@/components/OAuthButton";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -24,10 +24,10 @@ export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
-  const [error, setError] = React.useState("");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [error, setError] = useState("");
 
   const isFormValid = emailAddress && password && isLoaded;
 
@@ -37,10 +37,34 @@ export default function SignInScreen() {
     label: string;
   }[] = [
     { strategy: "oauth_google", icon: "google", label: "Google" },
-    { strategy: "oauth_github", icon: "github", label: "Github" },
+    { strategy: "oauth_github", icon: "github", label: "GitHub" },
   ];
 
-  const onSignInPress = React.useCallback(async () => {
+  // Handler for email input change
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      setEmailAddress(text);
+      if (error) setError("");
+    },
+    [error]
+  );
+
+  // Handler for password input change
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      setPassword(text);
+      if (error) setError("");
+    },
+    [error]
+  );
+
+  // Toggle password visibility
+  const togglePasswordVisibility = useCallback(() => {
+    setIsPasswordVisible((prev) => !prev);
+  }, []);
+
+  // Handle sign-in press
+  const onSignInPress = useCallback(async () => {
     if (!isLoaded) {
       return;
     }
@@ -58,7 +82,6 @@ export default function SignInScreen() {
 
         router.replace("/");
       } else {
-        // Handle other statuses if needed
         setError("Sign-in was not completed. Please try again.");
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
@@ -94,6 +117,7 @@ export default function SignInScreen() {
               </ThemedText>
             </ThemedView>
 
+            {/* OAuth buttons */}
             <View style={styles.oauthContainer}>
               {oauthProviders.map((provider) => (
                 <View key={provider.strategy} style={{ flex: 1 }}>
@@ -132,10 +156,7 @@ export default function SignInScreen() {
                 textContentType="emailAddress"
                 autoComplete="email"
                 value={emailAddress}
-                onChangeText={(text) => {
-                  setEmailAddress(text);
-                  if (error) setError("");
-                }}
+                onChangeText={handleEmailChange}
               />
               <Text>Password</Text>
               <View style={styles.passwordContainer}>
@@ -150,14 +171,11 @@ export default function SignInScreen() {
                   value={password}
                   returnKeyType="done"
                   onSubmitEditing={onSignInPress}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (error) setError("");
-                  }}
+                  onChangeText={handlePasswordChange}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
-                  onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                  onPress={togglePasswordVisibility}
                 >
                   <Ionicons
                     name={isPasswordVisible ? "eye-off" : "eye"}
